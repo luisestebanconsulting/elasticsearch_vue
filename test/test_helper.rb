@@ -1,10 +1,21 @@
+#
+#   test/test_helper.rb     - Helper Methods for Testing
+#
+#     Luis Esteban    17 April 2018
+#       created
+#
+
 ENV['RAILS_ENV'] ||= 'test'
+
 require_relative '../config/environment'
 require 'rails/test_help'
 
 class ActiveSupport::TestCase
-  # Setup all fixtures in test/fixtures/*.yml for all tests in alphabetical order.
+  
   fixtures :all
 
-  # Add more helper methods to be used by all tests here...
+  def assert_assigns(variable, value)
+    assert_equal value, assigns(variable)
+  end
+  
 end

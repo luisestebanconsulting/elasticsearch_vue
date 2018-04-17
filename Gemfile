@@ -56,6 +56,9 @@ group :test do
   gem 'selenium-webdriver'
   # Easy installation and use of chromedriver to run system tests with Chrome
   gem 'chromedriver-helper'
+  # assigns() has been extracted to a gem. To continue using it, add `gem 'rails-controller-testing'` to your Gemfile.
+  gem 'rails-controller-testing'
+  gem 'timecop'
 end
 
 # Windows does not include zoneinfo files, so bundle the tzinfo-data gem

@@ -1,3 +1,13 @@
+#
+#   config/routes.rb      - Routing Definitions
+#
+#     Luis Esteban    16 April 2018
+#       created
+#
+
 Rails.application.routes.draw do
-  # For details on the DSL available within this file, see http://guides.rubyonrails.org/routing.html
+  
+  #root          'application#index', format: 'json'
+  resources     :page_views
+  
 end
