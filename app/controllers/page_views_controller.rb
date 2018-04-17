@@ -6,6 +6,8 @@
 #
 
 require 'time'
+require 'elasticsearch'
+require 'dotenv/load'
 
 
 ##
@@ -13,6 +15,10 @@ require 'time'
 # and presents the results as a chart using Vue.
 
 class PageViewsController < ApplicationController
+  
+  DATA_HOST     = ENV['DATA_HOST']
+  DATA_USER     = ENV['DATA_USER']
+  DATA_PASSWORD = ENV['DATA_PASSWORD']
   
   ##
   # Defines time units in milliseconds
@@ -71,11 +77,30 @@ class PageViewsController < ApplicationController
     
 
     # -- Generate Query --
-    @intervals = []
-    (@after..@before).step(@interval) do |interval|
-      @intervals << interval
-    end
-
+    @query = generate_page_views_query
+    
+    
+    # -- Create Client --
+    @client = Elasticsearch::Client.new(
+      #trace:      true,
+      #log:        true,
+      host:       DATA_HOST,
+      user:       DATA_USER,
+      password:   DATA_PASSWORD,
+    )
+    
+    
+    # -- Get Data --
+    @data = @client.search(
+      index:  'events',
+      body:   @query
+    )
+    
+    
+    # -- Extract Results --
+    @results = extract_page_views_results
+    
+    
     # -- Render --
     render status: :created,
       json: {
@@ -84,10 +109,82 @@ class PageViewsController < ApplicationController
         after:      @after,
         interval:   @interval,
         intervals:  @intervals,
+        results:    @results,
       }
   end
   
   private
+  
+  def generate_page_views_query
+    @intervals = []
+    (@after..@before).step(@interval) do |interval|
+      @intervals << interval
+    end
+    
+    @ranges = @intervals.each_cons(2).to_a.map{|start,finish|
+      {
+        from:   start,
+        to:     finish,
+      }
+    }
+    
+    @query = {
+      size: 0,
+      aggs: {
+        group_by_derived_tstamp: {
+          range: {
+            field:    'derived_tstamp',
+            ranges:   @ranges
+          },
+          aggs: {
+            events: {
+              terms:  {
+                field:  'page_url',
+              },
+            },
+          },
+        }
+      }
+    }
+  end
+  
+  def extract_page_views_results(data = @data)
+    histograms = []
+    
+    aggregations = data['aggregations']
+    
+    if aggregations
+      
+      group_by_derived_tstamp = aggregations['group_by_derived_tstamp']
+      
+      if group_by_derived_tstamp
+        buckets = group_by_derived_tstamp['buckets']
+        
+        buckets.each do |bucket|
+          date_from = Time.parse(bucket['from_as_string'])
+          
+          histogram = {}
+          histogram.default = 0
+          
+          bucket['events']['buckets'].each do |event_bucket|
+            histogram[event_bucket['key']] = event_bucket['doc_count'].to_i
+          end
+          
+          histograms << [
+            bucket['from_as_string'],
+            bucket['to_as_string'],
+            histogram,
+          ]
+        end
+      else
+        Rails.logger.error 'NO GROUP_BY_DERIVED_TSTAMP'
+      end
+    else
+      Rails.logger.error 'NO AGGREGATIONS'
+    end
+    
+    @results = histograms
+  end
   
   ##
   # Expands a human readable interval definition into milliseconds.
