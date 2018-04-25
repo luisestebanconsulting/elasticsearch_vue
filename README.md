@@ -4,8 +4,8 @@ This is a demonstration application.  It demonstrates how to query an ElasticSea
 
 ## Requires
 
-Rails: 5.2.0
-Ruby:  2.3.4
+* Rails: 5.2.0
+* Ruby:  2.3.4
 
 ## Installation
 
@@ -13,19 +13,22 @@ Install according to standard Rails app installation procedure.
 
 ### DotEnv
 
-The app/service requires ElasticSearch credentials to be stored in a .env file; or otherwise in environment variables.
-The .env file needs to store:
+The app/service requires ElasticSearch credentials to be stored in a `.env` file; or otherwise in environment variables.
+The `.env` file needs to store:
 
+```bash
   export DATA_HOST=xxx.xxxxxxxx.xxx
   export DATA_USER=xxxxxx
   export DATA_PASSWORD=xxxxxxxxxxxxxxxxxxxxxxxxx
+```
 
 ## Usage
 
-The service is used by POSTing JSON data to /page_views.
+The service is used by POSTing JSON data to `/page_views`.
 
 ### Example
 
+```bash
   curl -X POST http://localhost:3000/page_views \
     -H "accept: application/json" \
     -H "cache-control: no-cache" \
@@ -41,6 +44,7 @@ The service is used by POSTing JSON data to /page_views.
       "before": "2017 June 2",
     "interval": "2h"
   }'
+```
 
 ## Author
 

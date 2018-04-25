@@ -66,3 +66,4 @@ gem 'tzinfo-data', platforms: [:mingw, :mswin, :x64_mingw, :jruby]
 
 gem 'dotenv'
 gem 'elasticsearch'
+gem 'rack-cors', require: 'rack/cors'
