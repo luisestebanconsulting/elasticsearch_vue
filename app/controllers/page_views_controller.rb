@@ -61,6 +61,10 @@ class PageViewsController < ApplicationController
     @before   = params[:before  ] || now_in_milliseconds
     @interval = params[:interval] || '6mon'
     
+    # If urls is present but still empty, convert to array
+    if @urls.empty?
+      @urls = []
+    end
     
     # -- Set Date Range --
     if @before.is_a?(String)
@@ -102,15 +106,7 @@ class PageViewsController < ApplicationController
     
     
     # -- Render --
-    render status: :created,
-      json: {
-        urls:       @urls,
-        before:     @before,
-        after:      @after,
-        interval:   @interval,
-        intervals:  @intervals,
-        results:    @results,
-      }
+    render status: :created,  json: @results
   end
   
   private
@@ -127,6 +123,16 @@ class PageViewsController < ApplicationController
         to:     finish,
       }
     }
+    
+    # If interval specifies a duration longer than the range after..before, just do the full range
+    if @ranges.empty?
+      @ranges = [
+        {
+          from:   @after,
+          to:     @before,
+        }
+      ]
+    end
     
     @query = {
       size: 0,
@@ -167,7 +173,9 @@ class PageViewsController < ApplicationController
           histogram.default = 0
           
           bucket['events']['buckets'].each do |event_bucket|
-            histogram[event_bucket['key']] = event_bucket['doc_count'].to_i
+            # Only include specified URLs if URLs are specified
+            next if !@urls.empty? && !@urls.include?(event_bucket['key'])
+            histogram[event_bucket['key']] += event_bucket['doc_count'].to_i
           end
           
           histograms << [
